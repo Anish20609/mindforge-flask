@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Smart Tips</title>
+  <style>
+    body { font-family: sans-serif; background: #fefefe; padding: 40px; text-align: center; }
+    h1 { color: #333; }
+    ul { text-align: left; display: inline-block; margin-top: 20px; }
+    li { padding: 8px; font-size: 18px; }
+    .no-tips { color: green; font-size: 20px; margin-top: 30px; }
+    a {
+      display: inline-block;
+      margin-top: 30px;
+      text-decoration: none;
+      background: #5c6bc0;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>💡 Smart Tips</h1>
+
+  {% if tips %}
+    <ul>
+      {% for chapter, avg in tips %}
+        <li>📌 <strong>{{ chapter }}</strong> → Avg: {{ avg }}/100</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="no-tips">🔥 You’re doing great! No weak chapters found!</p>
+  {% endif %}
+
+  <a href="/">🏠 Back to Home</a>
+
+</body>
+</html>

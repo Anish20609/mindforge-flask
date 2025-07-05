@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+</head>
+<body>
+  <h1>📁 All Your Tests</h1>
+  {% if tests %}
+    <ul>
+      {% for test in tests %}
+        <li>{{ test }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No tests added yet.</p>
+  {% endif %}
+  <a href="/">🏠 Back to Home</a>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+    "Maths": [
+        {
+            "chapter": "Differentiation",
+            "marks": 70
+        }
+    ],
+    "Physics": [
+        {
+            "chapter": "Electrostaics",
+            "marks": 48
+        }
+    ],
+    "Chemistry": [
+        {
+            "chapter": "chemial kintics,coordination com[pouds",
+            "marks": 42
+        }
+    ],
+    "English": [
+        {
+            "chapter": "laslesson",
+            "marks": 68
+        }
+    ],
+    "Computer": [
+        {
+            "chapter": "file handling",
+            "marks": 88
+        }
+    ]
+}

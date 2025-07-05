@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Your Rank</title>
+  <style>
+    body {
+      background: #f9f9ff;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding-top: 60px;
+    }
+
+    .box {
+      display: inline-block;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      font-size: 32px;
+      color: #5c6bc0;
+    }
+
+    .rank {
+      font-size: 24px;
+      margin: 20px 0;
+    }
+
+    .bar-container {
+      width: 300px;
+      background-color: #eee;
+      border-radius: 10px;
+      margin: 20px auto;
+      height: 25px;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      background-color: #7e57c2;
+    }
+
+    .footer {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    a {
+      text-decoration: none;
+      color: #fff;
+      background: #5c6bc0;
+      padding: 10px 20px;
+      border-radius: 8px;
+      display: inline-block;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="box">
+    <h1>🏆 Your MindForge Rank</h1>
+    <p class="rank">Average Score: <strong>{{ avg }}/100</strong></p>
+    <p class="rank">Rank Level: <strong>{{ rank }}</strong></p>
+
+    <div class="bar-container">
+      <div class="bar" style="width: {{ avg * 3 }}px;"></div>
+    </div>
+
+    <a href="/">🏠 Back to Home</a>
+  </div>
+
+  <div class="footer">
+    Keep leveling up 💪 You're doing amazing!
+  </div>
+
+</body>
+</html>

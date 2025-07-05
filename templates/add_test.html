@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Add Test</title>
+  <style>
+    body { font-family: Arial; }
+    input { margin: 5px; }
+    .subject { border: 1px solid #ccc; padding: 10px; margin: 10px; }
+  </style>
+</head>
+<body>
+  <h1>➕ Add New Test</h1>
+  <form method="POST">
+    <label>📝 Exam Name: </label>
+    <input type="text" name="exam_name" required><br><br>
+
+    {% for subject in subjects %}
+      <div class="subject">
+        <h3>{{ subject }}</h3>
+        <div id="{{ subject }}_fields">
+          <input type="text" name="{{ subject }}_chapter" placeholder="Chapter Name">
+          <input type="number" name="{{ subject }}_mark" placeholder="Marks"><br>
+        </div>
+        <button type="button" onclick="addChapter('{{ subject }}')">Add More</button>
+      </div>
+    {% endfor %}
+
+    <button type="submit">✅ Save Test</button>
+  </form>
+
+  <script>
+    function addChapter(subject) {
+      let div = document.getElementById(subject + "_fields");
+      let newInput = `<input type="text" name="${subject}_chapter" placeholder="Chapter Name">
+                      <input type="number" name="${subject}_mark" placeholder="Marks"><br>`;
+      div.insertAdjacentHTML('beforeend', newInput);
+    }
+  </script>
+
+  <br><a href="/">🏠 Home</a> | <a href="/dashboard">📁 Dashboard</a>
+</body>
+</html>
