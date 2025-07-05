@@ -1,175 +1,143 @@
-from flask import Flask, render_template, request, redirect, url_for
-import os
+from flask import Flask, render_template, request, redirect, send_file
 import json
+import os
+from datetime import datetime
 import matplotlib.pyplot as plt
 from fpdf import FPDF
-import datetime
 
 app = Flask(__name__)
+DATA_FILE = "tests/tests.json"
 
-# === Ensure folders exist ===
+# Ensure folders exist
 os.makedirs("tests", exist_ok=True)
 os.makedirs("static/graphs", exist_ok=True)
 
-# === Homepage ===
-@app.route('/')
-def home():
-    return render_template("index.html")
+# Load tests from file
+def load_tests():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
+    return []
 
-# === Dashboard ===
-@app.route('/dashboard')
-def dashboard():
-    files = os.listdir("tests")
-    test_names = [f.replace(".json", "") for f in files if f.endswith(".json")]
-    return render_template("dashboard.html", tests=test_names)
+# Save tests to file
+def save_tests(tests):
+    with open(DATA_FILE, "w") as f:
+        json.dump(tests, f, indent=4)
 
-# === Add Test ===
-@app.route('/add', methods=['GET', 'POST'])
+# Rank system logic
+def calculate_rank(total_marks):
+    if total_marks >= 95:
+        return "Diamond"
+    elif total_marks >= 85:
+        return "Platinum"
+    elif total_marks >= 75:
+        return "Gold"
+    elif total_marks >= 65:
+        return "Silver"
+    else:
+        return "Bronze"
+
+# Home page
+@app.route("/")
+def index():
+    tests = load_tests()
+    recent_tests = sorted(tests, key=lambda x: x["date"], reverse=True)[:5]
+    return render_template("index.html", recent_tests=recent_tests)
+
+# Add Test
+@app.route("/add", methods=["GET", "POST"])
 def add_test():
-    subjects = ["Maths", "Physics", "Chemistry", "English", "Computer"]
+    if request.method == "POST":
+        test = {
+            "subject": request.form["subject"],
+            "chapter": request.form["chapter"],
+            "date": request.form["date"],
+            "marks": int(request.form["marks"]),
+            "total": int(request.form["total"]),
+            "remarks": request.form["remarks"]
+        }
+        tests = load_tests()
+        tests.append(test)
+        save_tests(tests)
+        return redirect("/")
+    return render_template("add.html")
 
-    if request.method == 'POST':
-        exam_name = request.form['exam_name']
-        test_data = {}
+# Dashboard page
+@app.route("/dashboard")
+def dashboard():
+    tests = load_tests()
+    return render_template("dashboard.html", tests=tests)
 
-        for subject in subjects:
-            chapters = request.form.getlist(f'{subject}_chapter')
-            marks = request.form.getlist(f'{subject}_mark')
-            chapter_data = []
+# Graph page
+@app.route("/graph")
+def graph():
+    tests = load_tests()
+    if not tests:
+        return "No test data to generate graph."
 
-            for ch, m in zip(chapters, marks):
-                if ch.strip() != "" and m.strip() != "":
-                    chapter_data.append({"chapter": ch, "marks": int(m)})
+    dates = [t["date"] for t in tests]
+    marks = [t["marks"] for t in tests]
 
-            test_data[subject] = chapter_data
-
-        filename = f"{exam_name.replace(' ', '_')}.json"
-        with open(os.path.join("tests", filename), 'w') as f:
-            json.dump(test_data, f, indent=4)
-
-        return redirect(url_for('dashboard'))
-
-    return render_template("add_test.html", subjects=subjects)
-
-# === Show Graph ===
-@app.route('/graph')
-def show_graph():
-    files = os.listdir("tests")
-    all_data = {}
-
-    for file in files:
-        with open(os.path.join("tests", file), 'r') as f:
-            test_data = json.load(f)
-            for subject, chapters in test_data.items():
-                for item in chapters:
-                    key = f"{subject}: {item['chapter']}"
-                    all_data[key] = all_data.get(key, 0) + item['marks']
-
-    if not all_data:
-        return "No data to show."
-
-    labels = list(all_data.keys())
-    values = list(all_data.values())
-
-    # Create graph
-    plt.figure(figsize=(10, 6))
-    plt.barh(labels, values, color="orchid")
-    plt.title("📊 Chapter-wise Progress")
-    plt.xlabel("Marks")
+    plt.figure(figsize=(10, 4))
+    plt.plot(dates, marks, marker="o", linestyle="-", color="blue")
+    plt.title("Marks Progress")
+    plt.xlabel("Date")
+    plt.ylabel("Marks Scored")
+    plt.grid(True)
     plt.tight_layout()
 
     graph_path = "static/graphs/progress.png"
     plt.savefig(graph_path)
     plt.close()
-
     return render_template("graph.html", graph_url=graph_path)
-@app.route('/export')
+
+# Tips route
+@app.route("/tips")
+def tips():
+    tips_list = [
+        "Stay consistent every day!",
+        "Revise mistakes from previous tests.",
+        "Solve 10 questions before sleeping.",
+        "Use NCERT examples for basics.",
+        "Avoid burnout — take breaks!"
+    ]
+    return render_template("tips.html", tips=tips_list)
+
+# Rank route
+@app.route("/rank")
+def rank():
+    tests = load_tests()
+    total_scored = sum(t["marks"] for t in tests)
+    total_max = sum(t["total"] for t in tests)
+    percentage = (total_scored / total_max * 100) if total_max > 0 else 0
+    current_rank = calculate_rank(percentage)
+    return render_template("rank.html", total=total_scored, max=total_max,
+                           percentage=round(percentage, 2), rank=current_rank)
+
+# Export to PDF (emoji removed)
+@app.route("/export")
 def export_pdf():
-    files = os.listdir("tests")
-    if not files:
-        return "No test data to export."
+    tests = load_tests()
+    if not tests:
+        return "No data to export."
 
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, "MindForge Report Card", ln=True, align="C")
-    pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 10, f"Generated on: {datetime.datetime.now().strftime('%d %b %Y %H:%M')}", ln=True)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt="Test Report", ln=True, align='C')
     pdf.ln(10)
 
-    for file in files:
-        with open(os.path.join("tests", file), 'r') as f:
-            data = json.load(f)
-            pdf.set_font("Arial", "B", 14)
-            pdf.cell(0, 10, f"🧪 Test: {file.replace('.json','')}", ln=True)
-            for subject, chapters in data.items():
-                pdf.set_font("Arial", "B", 12)
-                pdf.cell(0, 8, f"Subject: {subject}", ln=True)
-                pdf.set_font("Arial", "", 12)
-                for item in chapters:
-                    pdf.cell(0, 8, f"• {item['chapter']} - {item['marks']} marks", ln=True)
-            pdf.ln(6)
+    for t in tests:
+        pdf.cell(200, 10, txt=f"Date: {t['date']}", ln=True)
+        pdf.cell(200, 10, txt=f"Subject: {t['subject']}", ln=True)
+        pdf.cell(200, 10, txt=f"Chapter: {t['chapter']}", ln=True)
+        pdf.cell(200, 10, txt=f"Marks: {t['marks']} / {t['total']}", ln=True)
+        pdf.cell(200, 10, txt=f"Remarks: {t['remarks']}", ln=True)
+        pdf.ln(5)
 
-    output_path = "static/MindForge_Report.pdf"
+    output_path = "tests/report.pdf"
     pdf.output(output_path)
+    return send_file(output_path, as_attachment=True)
 
-    return redirect("/static/MindForge_Report.pdf")
-@app.route('/tips')
-def smart_tips():
-    files = os.listdir("tests")
-    chapter_scores = {}
-    chapter_counts = {}
-
-    for file in files:
-        with open(os.path.join("tests", file), 'r') as f:
-            data = json.load(f)
-            for subject, chapters in data.items():
-                for item in chapters:
-                    key = f"{subject}: {item['chapter']}"
-                    chapter_scores[key] = chapter_scores.get(key, 0) + item['marks']
-                    chapter_counts[key] = chapter_counts.get(key, 0) + 1
-
-    tips = []
-
-    for chapter in chapter_scores:
-        avg = chapter_scores[chapter] / chapter_counts[chapter]
-        if avg < 50:
-            tips.append((chapter, round(avg, 1)))
-
-    return render_template("tips.html", tips=tips)
-@app.route('/rank')
-def show_rank():
-    files = os.listdir("tests")
-    total = 0
-    count = 0
-
-    for file in files:
-        with open(os.path.join("tests", file), 'r') as f:
-            data = json.load(f)
-            for subject, chapters in data.items():
-                for ch in chapters:
-                    total += ch['marks']
-                    count += 1
-
-    if count == 0:
-        return "No data found."
-
-    average = total / count
-    percent = round(min(max(average, 0), 100), 1)
-
-    # Determine Rank
-    if percent >= 90:
-        rank = "🔥 Legend"
-    elif percent >= 75:
-        rank = "🏅 Prodigy"
-    elif percent >= 60:
-        rank = "📘 Learner"
-    else:
-        rank = "🌱 Beginner"
-
-    return render_template("rank.html", avg=percent, rank=rank)
-
-
-# === Run Server ===
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
